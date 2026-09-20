@@ -2,11 +2,11 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use uuid::Uuid;
 
-use super::{
-    Assignment, CoveragePlan, CoveragePlanStatus, Policy, PolicyDecision, PolicyEvidence, Worker,
-    WorkItem,
-};
 use super::policy::evaluate_policy;
+use super::{
+    Assignment, CoveragePlan, CoveragePlanStatus, Policy, PolicyDecision, PolicyEvidence, WorkItem,
+    Worker,
+};
 
 const ASSIGNMENT_NAMESPACE: Uuid = Uuid::from_u128(0x5f69d2ca_2251_4c31_996e_59ee246afe81);
 

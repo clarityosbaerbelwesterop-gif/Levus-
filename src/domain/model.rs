@@ -60,7 +60,8 @@ pub struct Worker {
 
 impl Worker {
     pub fn effective_available_capacity(&self) -> u32 {
-        self.available_capacity.saturating_sub(self.reserved_capacity)
+        self.available_capacity
+            .saturating_sub(self.reserved_capacity)
     }
 
     pub fn has_capabilities(&self, requirements: &[CapabilityLevel]) -> bool {

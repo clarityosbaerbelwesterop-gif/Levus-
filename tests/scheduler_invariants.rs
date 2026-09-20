@@ -2,13 +2,20 @@ use std::collections::BTreeMap;
 
 use chrono::{TimeZone, Utc};
 use levus::domain::{
-    CapabilityLevel, Policy, PolicyDecision, Priority, Risk, ScheduleInput, Worker, WorkerStatus,
-    WorkerType, WorkItem, WorkStatus, schedule,
+    CapabilityLevel, Policy, PolicyDecision, Priority, Risk, ScheduleInput, WorkItem, WorkStatus,
+    Worker, WorkerStatus, WorkerType, schedule,
 };
 use pretty_assertions::assert_eq;
 use uuid::Uuid;
 
-fn worker(id: u128, org: Uuid, worker_type: WorkerType, level: u8, capacity: u32, cost: u64) -> Worker {
+fn worker(
+    id: u128,
+    org: Uuid,
+    worker_type: WorkerType,
+    level: u8,
+    capacity: u32,
+    cost: u64,
+) -> Worker {
     Worker {
         id: Uuid::from_u128(id),
         organization_id: org,
@@ -57,7 +64,10 @@ fn identical_inputs_produce_identical_plan() {
     let org = Uuid::from_u128(1);
     let plan_id = Uuid::from_u128(2);
     let incident_id = Uuid::from_u128(3);
-    let work_items = vec![work(10, org, 2, Risk::Medium), work(11, org, 2, Risk::Medium)];
+    let work_items = vec![
+        work(10, org, 2, Risk::Medium),
+        work(11, org, 2, Risk::Medium),
+    ];
     let workers = vec![
         worker(20, org, WorkerType::AiAgent, 2, 2, 10),
         worker(21, org, WorkerType::Human, 3, 2, 100),
@@ -155,7 +165,10 @@ fn scheduler_never_crosses_tenant_boundary() {
 #[test]
 fn capacity_and_concurrency_are_enforced() {
     let org = Uuid::from_u128(1);
-    let work_items = vec![work(10, org, 2, Risk::Medium), work(11, org, 2, Risk::Medium)];
+    let work_items = vec![
+        work(10, org, 2, Risk::Medium),
+        work(11, org, 2, Risk::Medium),
+    ];
     let mut limited = worker(20, org, WorkerType::Human, 3, 2, 1);
     limited.maximum_concurrency = 1;
     let workers = vec![limited];

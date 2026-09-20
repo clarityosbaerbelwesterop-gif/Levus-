@@ -1,15 +1,13 @@
-use super::{Policy, PolicyDecision, PolicyEvidence, Worker, WorkItem};
+use super::{Policy, PolicyDecision, PolicyEvidence, WorkItem, Worker};
 
-pub fn evaluate_policy(
-    worker: &Worker,
-    work: &WorkItem,
-    policies: &[Policy],
-) -> PolicyEvidence {
+pub fn evaluate_policy(worker: &Worker, work: &WorkItem, policies: &[Policy]) -> PolicyEvidence {
     let mut matching: Vec<&Policy> = policies
         .iter()
         .filter(|policy| policy.enabled && policy.organization_id == work.organization_id)
         .filter(|policy| {
-            policy.worker_type.is_none_or(|kind| kind == worker.worker_type)
+            policy
+                .worker_type
+                .is_none_or(|kind| kind == worker.worker_type)
                 && policy
                     .work_type_prefix
                     .as_ref()

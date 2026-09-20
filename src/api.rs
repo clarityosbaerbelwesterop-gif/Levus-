@@ -71,7 +71,11 @@ impl IntoResponse for ApiError {
                 "demo endpoints are disabled",
             ),
         };
-        (status, Json(json!({"error": {"code": code, "message": message}}))).into_response()
+        (
+            status,
+            Json(json!({"error": {"code": code, "message": message}})),
+        )
+            .into_response()
     }
 }
 
@@ -122,7 +126,12 @@ pub fn router(state: AppState) -> Router {
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::new().allow_origin(Any).allow_headers(Any).allow_methods(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_headers(Any)
+                .allow_methods(Any),
+        )
         .with_state(state)
 }
 
@@ -133,14 +142,15 @@ async fn health() -> Json<HealthResponse> {
 async fn ready(State(state): State<AppState>) -> Json<ReadyResponse> {
     Json(ReadyResponse {
         status: "ready",
-        database: if state.database.is_some() { "ready" } else { "disabled" },
+        database: if state.database.is_some() {
+            "ready"
+        } else {
+            "disabled"
+        },
     })
 }
 
-async fn organization(
-    state: &AppState,
-    headers: &HeaderMap,
-) -> Result<Uuid, ApiError> {
+async fn organization(state: &AppState, headers: &HeaderMap) -> Result<Uuid, ApiError> {
     let id = organization_id(headers)?;
     let runtime = state.runtime.read().await;
     if runtime.organization(id).is_none() {
@@ -155,7 +165,9 @@ async fn runtime_status(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!(runtime.organization(id).expect("checked").status())))
+    Ok(Json(json!(
+        runtime.organization(id).expect("checked").status()
+    )))
 }
 
 async fn workers(
@@ -164,7 +176,9 @@ async fn workers(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!({"items": &runtime.organization(id).expect("checked").workers})))
+    Ok(Json(
+        json!({"items": &runtime.organization(id).expect("checked").workers}),
+    ))
 }
 
 async fn work(
@@ -173,7 +187,9 @@ async fn work(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!({"items": &runtime.organization(id).expect("checked").work_items})))
+    Ok(Json(
+        json!({"items": &runtime.organization(id).expect("checked").work_items}),
+    ))
 }
 
 async fn incidents(
@@ -182,7 +198,9 @@ async fn incidents(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!({"items": &runtime.organization(id).expect("checked").incidents})))
+    Ok(Json(
+        json!({"items": &runtime.organization(id).expect("checked").incidents}),
+    ))
 }
 
 async fn coverage_plans(
@@ -191,7 +209,9 @@ async fn coverage_plans(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!({"items": &runtime.organization(id).expect("checked").coverage_plans})))
+    Ok(Json(
+        json!({"items": &runtime.organization(id).expect("checked").coverage_plans}),
+    ))
 }
 
 async fn events(
@@ -200,7 +220,9 @@ async fn events(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = organization(&state, &headers).await?;
     let runtime = state.runtime.read().await;
-    Ok(Json(json!({"items": &runtime.organization(id).expect("checked").events})))
+    Ok(Json(
+        json!({"items": &runtime.organization(id).expect("checked").events}),
+    ))
 }
 
 async fn reconcile_runtime(
@@ -251,5 +273,8 @@ fn organization_id(headers: &HeaderMap) -> Result<Uuid, ApiError> {
 }
 
 fn ensure_demo_enabled(state: &AppState) -> Result<(), ApiError> {
-    state.demo_enabled.then_some(()).ok_or(ApiError::DemoDisabled)
+    state
+        .demo_enabled
+        .then_some(())
+        .ok_or(ApiError::DemoDisabled)
 }

@@ -5,13 +5,12 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use super::{
-    reconcile, CapabilityLevel, ContinuityIncident, CoveragePlan, DesiredState, Event,
-    MetricComparator, OperationalMetric, Policy, PolicyDecision, Priority, Risk, Worker,
-    WorkerStatus, WorkerType, WorkItem, WorkStatus,
+    CapabilityLevel, ContinuityIncident, CoveragePlan, DesiredState, Event, MetricComparator,
+    OperationalMetric, Policy, PolicyDecision, Priority, Risk, WorkItem, WorkStatus, Worker,
+    WorkerStatus, WorkerType, reconcile,
 };
 
-pub const DEMO_ORGANIZATION_ID: Uuid =
-    Uuid::from_u128(0x00000000_0000_0000_0000_000000000001);
+pub const DEMO_ORGANIZATION_ID: Uuid = Uuid::from_u128(0x00000000_0000_0000_0000_000000000001);
 const DEMO_TIME_SECONDS: i64 = 1_800_000_000;
 
 #[derive(Debug, Clone, Serialize)]
@@ -133,7 +132,11 @@ impl OrganizationRuntime {
 
     pub fn disrupt_demo(&mut self) {
         let unavailable = Uuid::from_u128(0x10000000_0000_0000_0000_000000000001);
-        if let Some(worker) = self.workers.iter_mut().find(|worker| worker.id == unavailable) {
+        if let Some(worker) = self
+            .workers
+            .iter_mut()
+            .find(|worker| worker.id == unavailable)
+        {
             worker.status = WorkerStatus::Unavailable;
             worker.available_capacity = 0;
         }
@@ -180,9 +183,12 @@ impl OrganizationRuntime {
             });
         }
 
-        let disrupted_metric_id =
-            Uuid::from_u128(0x50000000_0000_0000_0000_000000000002);
-        if !self.metrics.iter().any(|metric| metric.id == disrupted_metric_id) {
+        let disrupted_metric_id = Uuid::from_u128(0x50000000_0000_0000_0000_000000000002);
+        if !self
+            .metrics
+            .iter()
+            .any(|metric| metric.id == disrupted_metric_id)
+        {
             self.metrics.push(OperationalMetric {
                 id: disrupted_metric_id,
                 organization_id: self.organization_id,
@@ -193,7 +199,11 @@ impl OrganizationRuntime {
             });
         }
 
-        if !self.events.iter().any(|event| event.event_type == "worker.unavailable") {
+        if !self
+            .events
+            .iter()
+            .any(|event| event.event_type == "worker.unavailable")
+        {
             self.events.push(Event {
                 id: Uuid::new_v4(),
                 organization_id: self.organization_id,
@@ -233,7 +243,11 @@ impl OrganizationRuntime {
         );
 
         if let Some(incident) = result.incident {
-            if !self.incidents.iter().any(|existing| existing.id == incident.id) {
+            if !self
+                .incidents
+                .iter()
+                .any(|existing| existing.id == incident.id)
+            {
                 self.events.push(Event {
                     id: Uuid::new_v4(),
                     organization_id: self.organization_id,
@@ -256,7 +270,11 @@ impl OrganizationRuntime {
         }
 
         if let Some(plan) = result.coverage_plan {
-            if !self.coverage_plans.iter().any(|existing| existing.id == plan.id) {
+            if !self
+                .coverage_plans
+                .iter()
+                .any(|existing| existing.id == plan.id)
+            {
                 self.events.push(Event {
                     id: Uuid::new_v4(),
                     organization_id: self.organization_id,
@@ -296,12 +314,40 @@ fn demo_runtime() -> OrganizationRuntime {
     ]);
 
     let workers = vec![
-        worker(1, "Alice", WorkerType::Human, human_caps.clone(), 10, 90_000),
+        worker(
+            1,
+            "Alice",
+            WorkerType::Human,
+            human_caps.clone(),
+            10,
+            90_000,
+        ),
         worker(2, "Bob", WorkerType::Human, human_caps.clone(), 10, 90_000),
         worker(3, "Cara", WorkerType::Human, human_caps, 10, 95_000),
-        worker(101, "AI Support A", WorkerType::AiAgent, ai_caps.clone(), 20, 8_000),
-        worker(102, "AI Support B", WorkerType::AiAgent, ai_caps.clone(), 20, 8_000),
-        worker(103, "AI Support C", WorkerType::AiAgent, ai_caps, 20, 10_000),
+        worker(
+            101,
+            "AI Support A",
+            WorkerType::AiAgent,
+            ai_caps.clone(),
+            20,
+            8_000,
+        ),
+        worker(
+            102,
+            "AI Support B",
+            WorkerType::AiAgent,
+            ai_caps.clone(),
+            20,
+            8_000,
+        ),
+        worker(
+            103,
+            "AI Support C",
+            WorkerType::AiAgent,
+            ai_caps,
+            20,
+            10_000,
+        ),
     ];
 
     OrganizationRuntime {

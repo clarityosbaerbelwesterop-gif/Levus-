@@ -2,8 +2,8 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use super::{
-    schedule, ContinuityIncident, CoveragePlan, DesiredState, IncidentSeverity, OperationalMetric,
-    Policy, ScheduleInput, Worker, WorkItem,
+    ContinuityIncident, CoveragePlan, DesiredState, IncidentSeverity, OperationalMetric, Policy,
+    ScheduleInput, WorkItem, Worker, schedule,
 };
 
 const INCIDENT_NAMESPACE: Uuid = Uuid::from_u128(0x7c4458d4_b4d7_43de_b682_1e28fd357188);
@@ -81,7 +81,10 @@ pub fn reconcile(
     let incident = ContinuityIncident {
         id: incident_id,
         organization_id,
-        incident_type: format!("{}_GAP", desired.metric_key.to_ascii_uppercase().replace('.', "_")),
+        incident_type: format!(
+            "{}_GAP",
+            desired.metric_key.to_ascii_uppercase().replace('.', "_")
+        ),
         desired_state_id: desired.id,
         metric_key: desired.metric_key.clone(),
         target: desired.target,
