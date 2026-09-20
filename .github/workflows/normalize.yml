@@ -42,3 +42,5 @@ jobs:
           fi
           git commit -m "chore: normalize Rust sources and lock dependencies"
           git push origin HEAD:build/m1-continuity-runtime
+
+# registered; trigger normalization
