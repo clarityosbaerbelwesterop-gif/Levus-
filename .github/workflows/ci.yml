@@ -1,0 +1,113 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "build/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --all-features
+      - name: Release build
+        run: cargo build --release --all-features
+
+  postgres-migration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: levus
+          POSTGRES_PASSWORD: levus
+          POSTGRES_DB: levus
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U levus -d levus"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 20
+    env:
+      PGPASSWORD: levus
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply clean migration
+        run: psql -h 127.0.0.1 -U levus -d levus -v ON_ERROR_STOP=1 -f migrations/0001_initial.sql
+      - name: Verify core tables
+        run: |
+          test "$(psql -h 127.0.0.1 -U levus -d levus -Atc "select count(*) from information_schema.tables where table_schema='public' and table_name in ('organizations','workers','work_items','policies','continuity_incidents','coverage_plans','assignments','events','audit_events');")" = "9"
+      - name: Verify cross-tenant worker reference is rejected
+        run: |
+          psql -h 127.0.0.1 -U levus -d levus -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO organizations(id,name) VALUES
+            ('00000000-0000-0000-0000-000000000001','A'),
+            ('00000000-0000-0000-0000-000000000002','B');
+          INSERT INTO workers(id,organization_id,name,worker_type,status,total_capacity,available_capacity,reserved_capacity,maximum_concurrency)
+          VALUES ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','Alice','HUMAN','AVAILABLE',10,10,0,10);
+          DO $$
+          BEGIN
+            BEGIN
+              INSERT INTO work_items(id,organization_id,title,work_type,status,priority,risk,estimated_effort,source,assigned_worker_id)
+              VALUES ('30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','Cross tenant','support.ticket.respond','READY','NORMAL','LOW',1,'test','10000000-0000-0000-0000-000000000001');
+              RAISE EXCEPTION 'cross-tenant FK unexpectedly accepted';
+            EXCEPTION WHEN foreign_key_violation THEN
+              NULL;
+            END;
+          END $$;
+          SQL
+
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Start API
+        env:
+          LEVUS_ENABLE_DEMO: "true"
+          LEVUS_BIND: 127.0.0.1:8080
+        run: |
+          cargo run > /tmp/levus.log 2>&1 &
+          echo $! > /tmp/levus.pid
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:8080/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/levus.log
+          exit 1
+      - name: Exercise deterministic continuity flow
+        run: |
+          ORG=00000000-0000-0000-0000-000000000001
+          curl --fail --silent -X POST http://127.0.0.1:8080/api/v1/demo/reset | tee /tmp/reset.json
+          curl --fail --silent -X POST http://127.0.0.1:8080/api/v1/demo/disrupt | tee /tmp/disrupt.json
+          curl --fail --silent -X POST -H "x-organization-id: $ORG" http://127.0.0.1:8080/api/v1/reconcile | tee /tmp/reconcile.json
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/reconcile.json'))
+          assert data['reconciled'] is True
+          assert data['latest_incident']['affected_work'] == 60
+          assert len(data['latest_coverage_plan']['assignments']) == 57
+          assert len(data['latest_coverage_plan']['escalations']) == 3
+          assert len(data['latest_coverage_plan']['uncovered_work']) == 3
+          PY
+      - name: Tenant boundary rejects unknown org
+        run: |
+          code=$(curl --silent --output /tmp/unknown.json --write-out '%{http_code}' -H 'x-organization-id: 00000000-0000-0000-0000-000000000099' http://127.0.0.1:8080/api/v1/work)
+          test "$code" = "404"

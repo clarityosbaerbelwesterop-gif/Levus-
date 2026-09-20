@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "features": [
+    {
+      "feature_id": "runtime.health",
+      "description": "Liveness and dependency-aware readiness endpoints",
+      "module": "src/api.rs",
+      "route": ["/health", "/ready"],
+      "api": ["GET /health", "GET /ready"],
+      "risk": "medium",
+      "test_types": ["runtime-smoke"],
+      "verification_state": "ci-pending",
+      "last_verified_commit": null,
+      "evidence": [".github/workflows/ci.yml"]
+    },
+    {
+      "feature_id": "runtime.scheduler",
+      "description": "Deterministic capability/policy/capacity/concurrency scheduler",
+      "module": "src/domain/scheduler.rs",
+      "route": [],
+      "api": ["POST /api/v1/reconcile"],
+      "risk": "critical",
+      "test_types": ["unit", "invariant", "tenant-negative"],
+      "verification_state": "ci-pending",
+      "last_verified_commit": null,
+      "evidence": ["tests/scheduler_invariants.rs"]
+    },
+    {
+      "feature_id": "runtime.reconciliation",
+      "description": "Desired-vs-actual detection with incident and coverage-plan generation",
+      "module": "src/domain/reconcile.rs",
+      "route": [],
+      "api": ["POST /api/v1/reconcile"],
+      "risk": "critical",
+      "test_types": ["replay", "demo-scenario", "runtime-smoke"],
+      "verification_state": "ci-pending",
+      "last_verified_commit": null,
+      "evidence": ["tests/reconciliation_demo.rs", ".github/workflows/ci.yml"]
+    },
+    {
+      "feature_id": "database.schema",
+      "description": "Normalized PostgreSQL schema with tenant-coherent composite foreign keys",
+      "module": "migrations/0001_initial.sql",
+      "route": [],
+      "api": [],
+      "risk": "critical",
+      "test_types": ["clean-migration", "schema-constraints"],
+      "verification_state": "ci-pending",
+      "last_verified_commit": null,
+      "evidence": [".github/workflows/ci.yml"]
+    }
+  ]
+}
