@@ -1,0 +1,44 @@
+name: Normalize Levus M1
+
+on:
+  push:
+    branches:
+      - build/m1-continuity-runtime
+    paths:
+      - ".github/workflows/normalize.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          ref: build/m1-continuity-runtime
+          fetch-depth: 0
+      - name: Install current stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: rustfmt
+      - name: Normalize Rust and lock dependencies
+        run: |
+          set -euo pipefail
+          cargo fmt
+          cargo generate-lockfile
+      - name: Commit normalization
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.lock src tests
+          if git diff --cached --quiet; then
+            echo "No normalization changes."
+            exit 0
+          fi
+          git commit -m "chore: normalize Rust sources and lock dependencies"
+          git push origin HEAD:build/m1-continuity-runtime
