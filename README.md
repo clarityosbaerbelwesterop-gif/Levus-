@@ -27,7 +27,7 @@ M1 intentionally does **not** claim production readiness. Authentication/identit
 
 ## Local run
 
-Requirements: Rust 1.85+, and optionally PostgreSQL 17.
+Requirements: Rust 1.85+, and optionally PostgreSQL 17. Environment variables are read from the process environment; M1 does not auto-load `.env` files.
 
 ```bash
 cp .env.example .env
