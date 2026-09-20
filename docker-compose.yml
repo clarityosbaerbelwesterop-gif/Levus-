@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: levus
+      POSTGRES_PASSWORD: levus
+      POSTGRES_DB: levus
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U levus -d levus"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - levus-postgres:/var/lib/postgresql/data
+
+volumes:
+  levus-postgres:
