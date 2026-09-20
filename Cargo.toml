@@ -2,7 +2,6 @@
 name = "levus"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
 description = "Autonomous workforce continuity control plane"
 license = "UNLICENSED"
 publish = false
